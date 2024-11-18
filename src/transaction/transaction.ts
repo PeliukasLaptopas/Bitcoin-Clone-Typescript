@@ -3,7 +3,7 @@ import TxIn from "./txIn";
 import BufferReader from 'buffer-reader';
 import TxOut from "./txOut";
 
-class Tx {
+export default class Tx {
   version: number;
   txIns: TxIn[]; // Array of transaction inputs
   txOuts: TxOut[]; // Array of transaction outputs
