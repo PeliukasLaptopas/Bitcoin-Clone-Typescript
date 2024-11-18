@@ -1,35 +1,25 @@
-import BitcoinVarint from "../utils/bitcoinVarint";
 import BufferReader from 'buffer-reader';
-import Script from "./script";
+import BitcoinVarint from '../utils/bitcoinVarint';
+import Script from './script';
 
-export default class TxIn {
-  prevTx: Uint8Array;
-  prevIndex: number;
-  scriptSig: Script;
-  sequence: number;
+export default class TxOut {
+  amount: number;
+  scriptPubKey: string;
 
-  constructor(
-    prevTx: Uint8Array,
-    prevIndex: number,
-    scriptSig: Script | null = null,
-    sequence: number = 0xffffffff // Default sequence value
-  ) {
-    this.prevTx = prevTx;
-    this.prevIndex = prevIndex;
-    this.scriptSig = scriptSig ? scriptSig : new Script();
-    this.sequence = sequence;
+  constructor(amount: number, scriptPubKey: string) {
+    this.amount = amount;
+    this.scriptPubKey = scriptPubKey;
   }
 
-  repr(): string {
-    return `${Buffer.from(this.prevTx).toString('hex')}:${this.prevIndex}`;
+  toString(): string {
+    return `${this.amount}:${this.scriptPubKey}`;
   }
 
-  static parse(buffer: BufferReader): TxIn {
-    const prevTx = new Uint8Array(buffer.nextBuffer(32));
-    const prevIndex = buffer.nextUInt32LE()
-    const scriptSig = new Script()
-    const sequence = buffer.nextUInt32LE()
+  static parse(buffer: BufferReader): TxOut {
+    const amount = BitcoinVarint.littleEndianToInt(new Uint8Array(buffer.nextBuffer(8)))
+    // const scriptPubKeyLength = BitcoinVarint.readVarint(buffer)
+    const scriptPubKey = Script.parse()
 
-    return new TxIn(prevTx, prevIndex, scriptSig, sequence)
+    return new TxOut(amount, "")
   }
 }

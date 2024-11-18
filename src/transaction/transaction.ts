@@ -1,19 +1,20 @@
 import BitcoinVarint from "../utils/bitcoinVarint";
 import TxIn from "./txIn";
 import BufferReader from 'buffer-reader';
+import TxOut from "./txOut";
 
 class Tx {
   version: number;
   txIns: TxIn[]; // Array of transaction inputs
-  // txOuts: TxOut[]; // Array of transaction outputs
-  // locktime: number;
+  txOuts: TxOut[]; // Array of transaction outputs
+  locktime: number;
   // testnet: boolean;
 
-  constructor(version: number, txIns: TxIn[]/*, txOuts: TxOut[], locktime: number, testnet: boolean = false*/) {
+  constructor(version: number, txIns: TxIn[], txOuts: TxOut[], locktime: number/*, testnet: boolean = false*/) {
     this.version = version;
     this.txIns = txIns;
-    // this.txOuts = txOuts;
-    // this.locktime = locktime;
+    this.txOuts = txOuts;
+    this.locktime = locktime;
     // this.testnet = testnet;
   }
 
@@ -51,16 +52,22 @@ class Tx {
     const version = BitcoinVarint.littleEndianToInt(new Uint8Array(buffer.nextBuffer(4)))
     const txInputsCount = BitcoinVarint.readVarint(buffer)
 
-    
-  const txInputs: TxIn[] = [];
-  for (let i = 0; i < txInputsCount; i++) {
-    // Call TxIn.parse for each input
-    const txIn = TxIn.parse(buffer);
-    txInputs.push(txIn);
-  }
+    const txInputs: TxIn[] = [];
+    for (let i = 0; i < txInputsCount; i++) {
+      const txIn = TxIn.parse(buffer);
+      txInputs.push(txIn);
+    }
 
-    // Create and return a Tx instance
-    return new Tx(version, txInputs);
+    const txOutputsCount = BitcoinVarint.readVarint(buffer)
+    const txOutputs: TxOut[] = [];
+    for (let i = 0; i < txOutputsCount; i++) {
+      const txOut = TxOut.parse(buffer);
+      txOutputs.push(txOut);
+    }
+
+    const locktime = BitcoinVarint.littleEndianToInt(new Uint8Array(buffer.nextBuffer(4)))
+
+    return new Tx(version, txInputs, txOutputs, locktime);
   }
 }
 
