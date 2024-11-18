@@ -1,4 +1,4 @@
-import BitcoinVarint from "./bitcoinVarint";
+import BitcoinVarint from "../utils/bitcoinVarint";
 import TxIn from "./txIn";
 import BufferReader from 'buffer-reader';
 

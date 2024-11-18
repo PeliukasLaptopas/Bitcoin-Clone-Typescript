@@ -1,18 +1,5 @@
-import BitcoinVarint from "./bitcoinVarint";
 import BufferReader from 'buffer-reader';
-
-export class Script {
-  // Placeholder for the Script class (can be extended later)
-  constructor() {}
-
-  toString(): string {
-    return "Script()"; // Placeholder representation
-  }
-
-  static parse(): Script {
-    return new Script()
-  }
-}
+import Script from './script';
 
 export default class TxIn {
   prevTx: Uint8Array;
