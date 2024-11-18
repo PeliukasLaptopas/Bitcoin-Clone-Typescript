@@ -43,13 +43,21 @@ export default class Tx {
   //   ).digest();
   // }
 
-  // serialize(): Buffer {
-  //   // Serialize the transaction (not implemented, placeholder)
-  //   return Buffer.alloc(0); // Replace with actual serialization logic
-  // }
+  serialize(): Buffer {
+    const versionEncoded = BitcoinVarint.intToLittleEndian(this.version, 4);
+    const txInsLengthEncoded = BitcoinVarint.encodeVarint(this.txIns.length)
+    const txOutsLengthEncoded = BitcoinVarint.encodeVarint(this.txOuts.length)
+    const lockTimeEncoded = BitcoinVarint.intToLittleEndian(this.locktime, 4)
+
+    const txInsSerialized = this.txIns.map(tx => tx.serialize())
+    const txOutsSerialized = this.txOuts.map(tx => tx.serialize())
+    
+    return Buffer.concat([versionEncoded, txInsLengthEncoded, ...txInsSerialized, txOutsLengthEncoded, ...txOutsSerialized, lockTimeEncoded])
+  }
 
   static parse(buffer: BufferReader): Tx {
     const version = BitcoinVarint.littleEndianToInt(new Uint8Array(buffer.nextBuffer(4)))
+
     const txInputsCount = BitcoinVarint.readVarint(buffer)
 
     const txInputs: TxIn[] = [];
@@ -64,11 +72,9 @@ export default class Tx {
       const txOut = TxOut.parse(buffer);
       txOutputs.push(txOut);
     }
-
+    
     const locktime = BitcoinVarint.littleEndianToInt(new Uint8Array(buffer.nextBuffer(4)))
 
     return new Tx(version, txInputs, txOutputs, locktime);
   }
 }
-
-// Supporting interfaces/classes

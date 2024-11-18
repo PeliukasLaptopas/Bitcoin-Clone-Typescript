@@ -28,9 +28,6 @@ const buffer = new BufferReader(Buffer.from(txHex, 'hex'));
 const transaction = Tx.parse(buffer);
 
 
-//ScriptSig of the second input:
-//the ScriptPubKey of the first output:
-//amount of the second output: 
 console.log(transaction.txIns[1].scriptSig.toString("hex"), "ScriptSig of the second input")
-console.log(transaction.txOuts[0].scriptPubKey, "the ScriptPubKey of the first output")
-console.log(transaction.txOuts[1].amount, "amount of the second output")
+console.log(transaction.txOuts[0].scriptPubKey.toString("hex"), "the ScriptPubKey of the first output")
+console.log(transaction.locktime, "locktime")

@@ -22,7 +22,7 @@ export default class BitcoinVarint {
 
   // Function to decode a varint from a Uint8Array (mimicking a stream)
   static readVarint(buffer: BufferReader): number {
-    const firstByte = buffer.nextInt8();
+    const firstByte = buffer.nextBuffer(1)[0];
     if (firstByte < 0xfd) {
       // Single-byte integer
       return firstByte;
