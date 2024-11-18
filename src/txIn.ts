@@ -1,3 +1,6 @@
+import BitcoinVarint from "./bitcoinVarint";
+import BufferReader from 'buffer-reader';
+
 export class Script {
   // Placeholder for the Script class (can be extended later)
   constructor() {}
@@ -5,13 +8,17 @@ export class Script {
   toString(): string {
     return "Script()"; // Placeholder representation
   }
+
+  static parse(): Script {
+    return new Script()
+  }
 }
 
 export default class TxIn {
-  prevTx: Uint8Array; // Previous transaction ID
-  prevIndex: number; // Previous transaction output index
-  scriptSig: Script; // Unlocking script
-  sequence: number; // Sequence number
+  prevTx: Uint8Array;
+  prevIndex: number;
+  scriptSig: Script;
+  sequence: number;
 
   constructor(
     prevTx: Uint8Array,
@@ -27,5 +34,14 @@ export default class TxIn {
 
   repr(): string {
     return `${Buffer.from(this.prevTx).toString('hex')}:${this.prevIndex}`;
+  }
+
+  static parse(buffer: BufferReader): TxIn {
+    const prevTx = new Uint8Array(buffer.nextBuffer(32));
+    const prevIndex = buffer.nextUInt32LE()
+    const scriptSig = new Script()
+    const sequence = buffer.nextUInt32LE()
+
+    return new TxIn(prevTx, prevIndex, scriptSig, sequence)
   }
 }

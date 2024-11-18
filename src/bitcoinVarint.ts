@@ -1,3 +1,5 @@
+import BufferReader from 'buffer-reader';
+
 export default class BitcoinVarint {
   // Helper function to convert a little-endian byte array to an integer
   static littleEndianToInt(bytes: Uint8Array): number {
@@ -19,22 +21,22 @@ export default class BitcoinVarint {
   }
 
   // Function to decode a varint from a Uint8Array (mimicking a stream)
-  static readVarint(buffer: Uint8Array): number {
-    const firstByte = buffer[0];
+  static readVarint(buffer: BufferReader): number {
+    const firstByte = buffer.nextInt8();
     if (firstByte < 0xfd) {
       // Single-byte integer
       return firstByte;
     } else if (firstByte === 0xfd) {
       // Read next 2 bytes
-      const nextBytes = buffer.slice(1, 3);
+      const nextBytes = buffer.nextBuffer(2);
       return this.littleEndianToInt(nextBytes);
     } else if (firstByte === 0xfe) {
       // Read next 4 bytes
-      const nextBytes = buffer.slice(1, 5);
+      const nextBytes = buffer.nextBuffer(4);
       return this.littleEndianToInt(nextBytes);
     } else if (firstByte === 0xff) {
       // Read next 8 bytes
-      const nextBytes = buffer.slice(1, 9);
+      const nextBytes = buffer.nextBuffer(8);
       return this.littleEndianToInt(nextBytes);
     } else {
       throw new Error("Invalid varint format");
@@ -69,9 +71,9 @@ export default class BitcoinVarint {
 
 // Example Usage
 // Decoding a varint
-const varintBuffer = new Uint8Array([0xfd, 0xff, 0x00]); // 255 in varint format
-console.log(BitcoinVarint.readVarint(varintBuffer)); // Output: 255
+// const varintBuffer = new Uint8Array([0xfd, 0xff, 0x00]); // 255 in varint format
+// console.log(BitcoinVarint.readVarint(varintBuffer)); // Output: 255
 
 // Encoding a varint
-const encodedVarint = BitcoinVarint.encodeVarint(70015);
-console.log(encodedVarint); // Output: Uint8Array [ 0xfe, 0x7f, 0x11, 0x01, 0x00 ]
+// const encodedVarint = BitcoinVarint.encodeVarint(70015);
+// console.log(encodedVarint); // Output: Uint8Array [ 0xfe, 0x7f, 0x11, 0x01, 0x00 ]

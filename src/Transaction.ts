@@ -1,5 +1,6 @@
 import BitcoinVarint from "./bitcoinVarint";
 import TxIn from "./txIn";
+import BufferReader from 'buffer-reader';
 
 class Tx {
   version: number;
@@ -46,15 +47,20 @@ class Tx {
   //   return Buffer.alloc(0); // Replace with actual serialization logic
   // }
 
-  static parse(serialization: Uint8Array): Tx {
-    // Extract the first 4 bytes for the version (little-endian)
-    const versionBytes = serialization.slice(0, 4);
+  static parse(buffer: BufferReader): Tx {
+    const version = BitcoinVarint.littleEndianToInt(new Uint8Array(buffer.nextBuffer(4)))
+    const txInputsCount = BitcoinVarint.readVarint(buffer)
 
-    // Convert the little-endian bytes to an integer
-    const version = BitcoinVarint.littleEndianToInt(versionBytes);
+    
+  const txInputs: TxIn[] = [];
+  for (let i = 0; i < txInputsCount; i++) {
+    // Call TxIn.parse for each input
+    const txIn = TxIn.parse(buffer);
+    txInputs.push(txIn);
+  }
 
     // Create and return a Tx instance
-    return new Tx(version);
+    return new Tx(version, txInputs);
   }
 }
 
