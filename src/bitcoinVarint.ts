@@ -1,0 +1,77 @@
+export default class BitcoinVarint {
+  // Helper function to convert a little-endian byte array to an integer
+  static littleEndianToInt(bytes: Uint8Array): number {
+    let result = 0;
+    for (let i = 0; i < bytes.length; i++) {
+      result |= bytes[i] << (i * 8);
+    }
+    return result;
+  }
+
+  // Helper function to convert an integer to a little-endian byte array
+  static intToLittleEndian(value: number, byteLength: number): Uint8Array {
+    const result = new Uint8Array(byteLength);
+    for (let i = 0; i < byteLength; i++) {
+      result[i] = value & 0xff;
+      value >>= 8;
+    }
+    return result;
+  }
+
+  // Function to decode a varint from a Uint8Array (mimicking a stream)
+  static readVarint(buffer: Uint8Array): number {
+    const firstByte = buffer[0];
+    if (firstByte < 0xfd) {
+      // Single-byte integer
+      return firstByte;
+    } else if (firstByte === 0xfd) {
+      // Read next 2 bytes
+      const nextBytes = buffer.slice(1, 3);
+      return this.littleEndianToInt(nextBytes);
+    } else if (firstByte === 0xfe) {
+      // Read next 4 bytes
+      const nextBytes = buffer.slice(1, 5);
+      return this.littleEndianToInt(nextBytes);
+    } else if (firstByte === 0xff) {
+      // Read next 8 bytes
+      const nextBytes = buffer.slice(1, 9);
+      return this.littleEndianToInt(nextBytes);
+    } else {
+      throw new Error("Invalid varint format");
+    }
+  }
+
+  // Function to encode a number into a varint
+  static encodeVarint(value: number): Uint8Array {
+    if (value < 0xfd) {
+      // Single-byte integer
+      return new Uint8Array([value]);
+    } else if (value <= 0xffff) {
+      // 2-byte integer with 0xfd prefix
+      const prefix = new Uint8Array([0xfd]);
+      const littleEndianBytes = this.intToLittleEndian(value, 2);
+      return new Uint8Array([...prefix, ...littleEndianBytes]);
+    } else if (value <= 0xffffffff) {
+      // 4-byte integer with 0xfe prefix
+      const prefix = new Uint8Array([0xfe]);
+      const littleEndianBytes = this.intToLittleEndian(value, 4);
+      return new Uint8Array([...prefix, ...littleEndianBytes]);
+    } else if (value <= Number.MAX_SAFE_INTEGER) {
+      // 8-byte integer with 0xff prefix
+      const prefix = new Uint8Array([0xff]);
+      const littleEndianBytes = this.intToLittleEndian(value, 8);
+      return new Uint8Array([...prefix, ...littleEndianBytes]);
+    } else {
+      throw new Error(`Integer too large: ${value}`);
+    }
+  }
+}
+
+// Example Usage
+// Decoding a varint
+const varintBuffer = new Uint8Array([0xfd, 0xff, 0x00]); // 255 in varint format
+console.log(BitcoinVarint.readVarint(varintBuffer)); // Output: 255
+
+// Encoding a varint
+const encodedVarint = BitcoinVarint.encodeVarint(70015);
+console.log(encodedVarint); // Output: Uint8Array [ 0xfe, 0x7f, 0x11, 0x01, 0x00 ]
