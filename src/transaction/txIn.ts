@@ -1,5 +1,5 @@
 import BufferReader from 'buffer-reader';
-import Script from './script';
+import Script from '../script/script';
 import BitcoinVarint from '../utils/bitcoinVarint';
 import TxFetcher from './transactionFetcher';
 import Tx from './transaction';
@@ -35,7 +35,7 @@ export default class TxIn {
   }
 
   // Get the ScriptPubKey from the previous transaction
-  async scriptPubKey(testnet: boolean = false): Promise<Script> {
+  async scriptPubKey(testnet: boolean = false): Promise<Buffer> {
     const tx = await this.fetchTx(testnet); // Fetch the previous transaction
     return tx.txOuts[this.prevIndex].scriptPubKey; // Return the ScriptPubKey from the corresponding output
   }

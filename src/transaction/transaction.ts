@@ -26,16 +26,6 @@ export default class Tx {
     return this.hash().toString('hex');
   }
 
-
-  // def fee(self, testnet=False):
-  // input_sum, output_sum = 0, 0
-  // for tx_in in self.tx_ins:
-  //     input_sum += tx_in.value(testnet=testnet)
-  // for tx_out in self.tx_outs:
-  //     output_sum += tx_out.amount
-  // return input_sum - output_sum
-  // # end::answer6[]
-
   async fee(testnet: boolean): Promise<number> {
     const inputSum  = (await Promise.all(this.txIns.map(tx => tx.value(testnet)))).reduce((acc, value) => acc + value, 0);
     const outputSum = (await Promise.all(this.txOuts.map(tx => tx.amount))).reduce((acc, value) => acc + value, 0);
