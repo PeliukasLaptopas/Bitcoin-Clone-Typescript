@@ -5,43 +5,43 @@ import TxOut from "./txOut";
 
 export default class Tx {
   version: number;
-  txIns: TxIn[]; // Array of transaction inputs
-  txOuts: TxOut[]; // Array of transaction outputs
+  txIns: TxIn[];
+  txOuts: TxOut[];
   locktime: number;
-  // testnet: boolean;
+  testnet: boolean;
 
-  constructor(version: number, txIns: TxIn[], txOuts: TxOut[], locktime: number/*, testnet: boolean = false*/) {
+  constructor(version: number, txIns: TxIn[], txOuts: TxOut[], locktime: number, testnet: boolean = false) {
     this.version = version;
     this.txIns = txIns;
     this.txOuts = txOuts;
     this.locktime = locktime;
-    // this.testnet = testnet;
+    this.testnet = testnet;
   }
 
-  // repr(): string {
-    // let txInsRepr = this.txIns.map(txIn.ts => txIn.ts.repr()).join('\n');
-    // let txOutsRepr = this.txOuts.map(txOut => txOut.repr()).join('\n');
-    //
-    // return `tx: ${this.id()} version: ${this.version} tx_ins: ${txInsRepr} tx_outs: ${txOutsRepr} locktime: ${this.locktime}`;
-  // }
+  hash(): Buffer {
+    return Buffer.from([]);
+  }
 
-  // id(): string {
-    // Returns the human-readable hexadecimal transaction hash
-    // return this.hash().toString('hex'); // Replace with a hex string conversion method
-  // }
+  id(): string {
+    return this.hash().toString('hex');
+  }
 
-  // hash(): Buffer {
-  //   // Returns the binary hash of the serialized transaction
-  //   return this.hash256(this.serialize()).reverse(); // Reverse for little-endian order
-  // }
 
-  // Helper method for double SHA256 hashing
-  // hash256(data: Buffer): Buffer {
-  //   const crypto = require('crypto');
-  //   return crypto.createHash('sha256').update(
-  //     crypto.createHash('sha256').update(data).digest()
-  //   ).digest();
-  // }
+  // def fee(self, testnet=False):
+  // input_sum, output_sum = 0, 0
+  // for tx_in in self.tx_ins:
+  //     input_sum += tx_in.value(testnet=testnet)
+  // for tx_out in self.tx_outs:
+  //     output_sum += tx_out.amount
+  // return input_sum - output_sum
+  // # end::answer6[]
+
+  async fee(testnet: boolean): Promise<number> {
+    const inputSum  = (await Promise.all(this.txIns.map(tx => tx.value(testnet)))).reduce((acc, value) => acc + value, 0);
+    const outputSum = (await Promise.all(this.txOuts.map(tx => tx.amount))).reduce((acc, value) => acc + value, 0);
+    
+    return inputSum - outputSum
+  }
 
   serialize(): Buffer {
     const versionEncoded = BitcoinVarint.intToLittleEndian(this.version, 4);
@@ -55,7 +55,7 @@ export default class Tx {
     return Buffer.concat([versionEncoded, txInsLengthEncoded, ...txInsSerialized, txOutsLengthEncoded, ...txOutsSerialized, lockTimeEncoded])
   }
 
-  static parse(buffer: BufferReader): Tx {
+  static parse(buffer: BufferReader, testnet: boolean): Tx {
     const version = BitcoinVarint.littleEndianToInt(new Uint8Array(buffer.nextBuffer(4)))
 
     const txInputsCount = BitcoinVarint.readVarint(buffer)
@@ -75,6 +75,6 @@ export default class Tx {
     
     const locktime = BitcoinVarint.littleEndianToInt(new Uint8Array(buffer.nextBuffer(4)))
 
-    return new Tx(version, txInputs, txOutputs, locktime);
+    return new Tx(version, txInputs, txOutputs, locktime, testnet);
   }
 }
