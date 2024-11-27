@@ -33,7 +33,7 @@ export default class TxFetcher {
         tx.locktime = this.littleEndianToInt(raw.subarray(-4));
 
         // If the tx_id does not match, raise an error
-        if (tx.id() !== tx_id) {
+        if (tx.id().toString() !== tx_id) {
           throw new Error(`not the same id: ${tx.id()} vs ${tx_id}`);
         }
 

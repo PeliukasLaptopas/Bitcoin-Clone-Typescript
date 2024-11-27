@@ -8,6 +8,10 @@ export default class Script {
       this.cmds = cmds;
   }
 
+  combine(other: Script): Script {
+    return new Script([...this.cmds, ...other.cmds]);
+  }
+
   public static parse(buffer: BufferReader): Script {
       const cmds: (number | Buffer)[] = [];
       const length = BitcoinVarint.readVarint(buffer);

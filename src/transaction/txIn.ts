@@ -41,20 +41,19 @@ export default class TxIn {
   }
 
   serialize(): Buffer {
-    // Reverse the prevTx (because it's stored in little-endian format)
-    const prevTxBuffer = Buffer.from(this.prevTx).reverse();
+    const prevTxBuffer = Buffer.from(this.prevTx);
     const prevIndexBuffer = BitcoinVarint.intToLittleEndian(this.prevIndex, 4);
+    const scriptSigLength = BitcoinVarint.encodeVarint(this.scriptSig.length)
     const sequenceBuffer = BitcoinVarint.intToLittleEndian(this.sequence, 4);
-    return Buffer.concat([prevTxBuffer, prevIndexBuffer, this.scriptSig, sequenceBuffer]);
+
+    return Buffer.concat([prevTxBuffer, prevIndexBuffer, scriptSigLength, this.scriptSig, sequenceBuffer]);
   }
 
   static parse(buffer: BufferReader): TxIn {
     const prevTx = buffer.nextBuffer(32);
     const prevIndex = buffer.nextUInt32LE()
-
     const scriptSigLength = BitcoinVarint.readVarint(buffer);
     const scriptSig = buffer.nextBuffer(scriptSigLength);
-  
     const sequence = buffer.nextUInt32LE()
 
     return new TxIn(prevTx, prevIndex, scriptSig, sequence)

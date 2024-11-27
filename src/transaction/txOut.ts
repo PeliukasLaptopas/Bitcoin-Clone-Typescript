@@ -16,12 +16,13 @@ export default class TxOut {
 
   serialize(): Buffer {
     const amountInLittleEndian = BitcoinVarint.intToLittleEndian(this.amount, 8);
-    return Buffer.concat([amountInLittleEndian, this.scriptPubKey]);
+    const scriptPubKeyLength = BitcoinVarint.encodeVarint(this.scriptPubKey.length);
+
+    return Buffer.concat([amountInLittleEndian, scriptPubKeyLength, this.scriptPubKey]);
   }
 
   static parse(buffer: BufferReader): TxOut {
     const amount = BitcoinVarint.littleEndianToInt(new Uint8Array(buffer.nextBuffer(8)))
-
     const scriptPubKeyLength = BitcoinVarint.readVarint(buffer);
     const scriptPubKey = buffer.nextBuffer(scriptPubKeyLength);
 

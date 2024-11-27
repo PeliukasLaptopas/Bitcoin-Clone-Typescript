@@ -16,7 +16,7 @@ export function opHash160(stack: string[]): boolean {
     return true;
 }
     
-    export function opDup(stack: string[]): boolean {
+export function opDup(stack: string[]): boolean {
     if (stack.length < 1) {
         return false;
     }
