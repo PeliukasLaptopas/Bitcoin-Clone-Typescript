@@ -15,39 +15,42 @@ export default class TxFetcher {
   }
 
   static async fetchTransaction(tx_id: string, testnet: boolean = false, fresh: boolean = false): Promise<Tx> {
-    if (fresh || !(tx_id in TxFetcher.cache)) {
-      const url = `${TxFetcher.getUrl(testnet)}/tx/${tx_id}.hex`;
+    return TxFetcher.cache[tx_id];
+    
 
-      try {
-        const response = await axios.get(url);
-        const raw: Buffer = Buffer.from(response.data.trim(), 'hex');
+    // if (fresh || !(tx_id in TxFetcher.cache)) {
+    //   const url = `${TxFetcher.getUrl(testnet)}/tx/${tx_id}.hex`;
 
-        // If the 4th byte of the raw transaction is 0, create a new buffer
-        const modifiedRaw: Buffer = raw[4] === 0 
-          ? Buffer.concat([raw.subarray(0, 4), raw.slice(6)]) 
-          : raw;
-        const rawBufferReader = new BufferReader(modifiedRaw);
+    //   try {
+    //     const response = await axios.get(url);
+    //     const raw: Buffer = Buffer.from(response.data.trim(), 'hex');
 
-        let tx = Tx.parse(rawBufferReader, testnet);
+    //     // If the 4th byte of the raw transaction is 0, create a new buffer
+    //     const modifiedRaw: Buffer = raw[4] === 0 
+    //       ? Buffer.concat([raw.subarray(0, 4), raw.slice(6)]) 
+    //       : raw;
+    //     const rawBufferReader = new BufferReader(modifiedRaw);
 
-        tx.locktime = this.littleEndianToInt(raw.subarray(-4));
+    //     let tx = Tx.parse(rawBufferReader, testnet);
 
-        // If the tx_id does not match, raise an error
-        if (tx.id().toString() !== tx_id) {
-          throw new Error(`not the same id: ${tx.id()} vs ${tx_id}`);
-        }
+    //     tx.locktime = this.littleEndianToInt(raw.subarray(-4));
 
-        // Cache the transaction and return
-        TxFetcher.cache[tx_id] = tx;
-        TxFetcher.cache[tx_id].testnet = testnet;
-        return TxFetcher.cache[tx_id];
+    //     // If the tx_id does not match, raise an error
+    //     if (tx.id().toString() !== tx_id) {
+    //       throw new Error(`not the same id: ${tx.id()} vs ${tx_id}`);
+    //     }
 
-      } catch (error) {
-        throw new Error(`Unexpected response: ${error}`);
-      }
-    } else {
-      return TxFetcher.cache[tx_id];
-    }
+    //     // Cache the transaction and return
+    //     TxFetcher.cache[tx_id] = tx;
+    //     TxFetcher.cache[tx_id].testnet = testnet;
+    //     return TxFetcher.cache[tx_id];
+
+    //   } catch (error) {
+    //     throw new Error(`Unexpected response: ${error}`);
+    //   }
+    // } else {
+    //   return TxFetcher.cache[tx_id];
+    // }
   }
 
   // Helper method to convert a little-endian byte array into an integer

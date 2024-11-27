@@ -22,8 +22,10 @@ export default class TxOut {
   }
 
   static parse(buffer: BufferReader): TxOut {
-    const amount = BitcoinVarint.littleEndianToInt(new Uint8Array(buffer.nextBuffer(8)))
+    const amountBf = buffer.nextBuffer(8)
+    const amount = BitcoinVarint.littleEndianToInt(new Uint8Array(amountBf))
     const scriptPubKeyLength = BitcoinVarint.readVarint(buffer);
+    const len = Buffer.from(BitcoinVarint.encodeVarint(scriptPubKeyLength))
     const scriptPubKey = buffer.nextBuffer(scriptPubKeyLength);
 
     return new TxOut(amount, scriptPubKey)

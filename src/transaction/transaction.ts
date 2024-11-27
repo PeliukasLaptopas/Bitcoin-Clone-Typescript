@@ -2,6 +2,8 @@ import BitcoinVarint from "../utils/bitcoinVarint";
 import TxIn from "./txIn";
 import BufferReader from 'buffer-reader';
 import TxOut from "./txOut";
+import TxFetcher from "./transactionFetcher";
+import * as crypto from 'crypto';
 
 export default class Tx {
   version: number;
@@ -22,13 +24,35 @@ export default class Tx {
     return Buffer.from([]);
   }
 
-  id(): Buffer {
-    return this.hash()
+  public id(): Buffer {
+    const serializedTx = this.serialize(false)
+    const firstHash = crypto.createHash('sha256').update(serializedTx).digest();
+    const secondHash = crypto.createHash('sha256').update(firstHash).digest();
+    // Reverse the resulting hash to get the TXID in big-endian format
+    const txid = secondHash.reverse();
+
+    return txid;
   }
 
-  //the hash of the transaction data that is being signed by the private key
+  public test() {
+    return 123
+  }
+
+  //The hash of the transaction data that is being signed by the private key (this is specifically constructed for signing).
+  //It is a modified hash of the transaction that includes specific rules for signing (e.g., the scriptPubKey and the SIGHASH flag).
   public signatureHash(inputIndex: number): Buffer {
-    const txCopy = new Tx(this.version, this.txIns, this.txOuts, this.locktime, this.testnet)
+    const clonedTxIn: Tx = Object.assign(
+      Object.create(Object.getPrototypeOf(this)), 
+      this
+    );
+
+    // clonedTxIn.txIns.map((txIn: TxIn, index) => {
+    //   if (inputIndex !== index) {
+    //     txIn.scriptSig = Buffer.alloc(0)
+    //   } else {
+    //     const prevTx = TxFetcher.fetchTransaction(txIn.prevIndex)
+    //   }
+    // })
 
     // Reverse the prevTx (because it's stored in little-endian format)
     // In Bitcoin transactions, the txid of a previous transaction input is stored in little-endian byte order in the raw hex.
@@ -67,6 +91,7 @@ export default class Tx {
     const version = BitcoinVarint.littleEndianToInt(new Uint8Array(versionBuffer))
 
     const txInputsCount = BitcoinVarint.readVarint(buffer)
+    const txInputsCountEncoded = BitcoinVarint.encodeVarint(txInputsCount)
 
     const txInputs: TxIn[] = [];
     for (let i = 0; i < txInputsCount; i++) {
