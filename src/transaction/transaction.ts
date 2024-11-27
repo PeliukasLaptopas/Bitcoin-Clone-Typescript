@@ -32,42 +32,38 @@ export default class Tx {
     return txid;
   }
 
-  public test() {
-    return 123
-  }
-
   //The hash of the transaction data that is being signed by the private key (this is specifically constructed for signing).
   //It is a modified hash of the transaction that includes specific rules for signing (e.g., the scriptPubKey and the SIGHASH flag).
-    public async signatureHash(inputIndex: number): Promise<Buffer> {
-      const clonedTx: Tx = Object.assign(
-        Object.create(Object.getPrototypeOf(this)),
-        this
-      );
+  public async signatureHash(inputIndex: number): Promise<Buffer> {
+    const clonedTx: Tx = Object.assign(
+      Object.create(Object.getPrototypeOf(this)),
+      this
+    );
 
-      clonedTx.txIns.map(async (txIn: TxIn, index) => {
-        if (inputIndex !== index) {
-          txIn.scriptSig = Buffer.alloc(0)
-        } else {
-          const prevTx = await TxFetcher.fetchTransaction(txIn.prevTx.toString('hex'))
-          const scriptPubKey = prevTx.txOuts[txIn.prevIndex].scriptPubKey
-          txIn.scriptSig = scriptPubKey
-        }
-      })
-      
-      const versionEncoded = BitcoinVarint.intToLittleEndian(clonedTx.version, 4);
-      const txInsLengthEncoded = BitcoinVarint.encodeVarint(clonedTx.txIns.length)
-      const txOutsLengthEncoded = BitcoinVarint.encodeVarint(clonedTx.txOuts.length)
-      const lockTimeEncoded = BitcoinVarint.intToLittleEndian(clonedTx.locktime, 4)
-      const txInsSerialized = clonedTx.txIns.map(tx => tx.serialize(true))
-      const txOutsSerialized = clonedTx.txOuts.map(tx => tx.serialize())
-      const SIGHASH_ALL = Buffer.from([0x01, 0x00, 0x00, 0x00]) //encoded in little endian over 4 bytes
-      const serializedTx = Buffer.concat([versionEncoded, txInsLengthEncoded, ...txInsSerialized, txOutsLengthEncoded, ...txOutsSerialized, lockTimeEncoded, SIGHASH_ALL])
+    clonedTx.txIns.map(async (txIn: TxIn, index) => {
+      if (inputIndex !== index) {
+        txIn.scriptSig = Buffer.alloc(0)
+      } else {
+        const prevTx = await TxFetcher.fetchTransaction(txIn.prevTx.toString('hex'))
+        const scriptPubKey = prevTx.txOuts[txIn.prevIndex].scriptPubKey
+        txIn.scriptSig = scriptPubKey
+      }
+    })
+    
+    const versionEncoded = BitcoinVarint.intToLittleEndian(clonedTx.version, 4);
+    const txInsLengthEncoded = BitcoinVarint.encodeVarint(clonedTx.txIns.length)
+    const txOutsLengthEncoded = BitcoinVarint.encodeVarint(clonedTx.txOuts.length)
+    const lockTimeEncoded = BitcoinVarint.intToLittleEndian(clonedTx.locktime, 4)
+    const txInsSerialized = clonedTx.txIns.map(tx => tx.serialize(true))
+    const txOutsSerialized = clonedTx.txOuts.map(tx => tx.serialize())
+    const SIGHASH_ALL = Buffer.from([0x01, 0x00, 0x00, 0x00]) //encoded in little endian over 4 bytes
+    const serializedTx = Buffer.concat([versionEncoded, txInsLengthEncoded, ...txInsSerialized, txOutsLengthEncoded, ...txOutsSerialized, lockTimeEncoded, SIGHASH_ALL])
 
-      const firstHash = crypto.createHash('sha256').update(serializedTx).digest();
-      const secondHash = crypto.createHash('sha256').update(firstHash).digest();
-      
-      return secondHash;
-    }
+    const firstHash = crypto.createHash('sha256').update(serializedTx).digest();
+    const secondHash = crypto.createHash('sha256').update(firstHash).digest();
+    
+    return secondHash;
+  }
 
   async fee(): Promise<number> {
     const inputSum  = (await Promise.all(this.txIns.map(tx => tx.value()))).reduce((acc, value) => acc + value, 0);

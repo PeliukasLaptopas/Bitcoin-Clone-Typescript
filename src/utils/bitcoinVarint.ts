@@ -67,12 +67,3 @@ export default class BitcoinVarint {
     }
   }
 }
-
-// Example Usage
-// Decoding a varint
-// const varintBuffer = new Uint8Array([0xfd, 0xff, 0x00]); // 255 in varint format
-// console.log(BitcoinVarint.readVarint(varintBuffer)); // Output: 255
-
-// Encoding a varint
-// const encodedVarint = BitcoinVarint.encodeVarint(70015);
-// console.log(encodedVarint); // Output: Uint8Array [ 0xfe, 0x7f, 0x11, 0x01, 0x00 ]
