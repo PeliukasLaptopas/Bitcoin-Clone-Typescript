@@ -10,14 +10,12 @@ export default class Tx {
   txIns: TxIn[];
   txOuts: TxOut[];
   locktime: number;
-  testnet: boolean;
 
-  constructor(version: number, txIns: TxIn[], txOuts: TxOut[], locktime: number, testnet: boolean = false) {
+  constructor(version: number, txIns: TxIn[], txOuts: TxOut[], locktime: number) {
     this.version = version;
     this.txIns = txIns;
     this.txOuts = txOuts;
     this.locktime = locktime;
-    this.testnet = testnet;
   }
 
   hash(): Buffer {
@@ -40,30 +38,39 @@ export default class Tx {
 
   //The hash of the transaction data that is being signed by the private key (this is specifically constructed for signing).
   //It is a modified hash of the transaction that includes specific rules for signing (e.g., the scriptPubKey and the SIGHASH flag).
-  public signatureHash(inputIndex: number): Buffer {
-    const clonedTxIn: Tx = Object.assign(
-      Object.create(Object.getPrototypeOf(this)), 
-      this
-    );
+    public async signatureHash(inputIndex: number): Promise<Buffer> {
+      const clonedTx: Tx = Object.assign(
+        Object.create(Object.getPrototypeOf(this)),
+        this
+      );
 
-    // clonedTxIn.txIns.map((txIn: TxIn, index) => {
-    //   if (inputIndex !== index) {
-    //     txIn.scriptSig = Buffer.alloc(0)
-    //   } else {
-    //     const prevTx = TxFetcher.fetchTransaction(txIn.prevIndex)
-    //   }
-    // })
+      clonedTx.txIns.map(async (txIn: TxIn, index) => {
+        if (inputIndex !== index) {
+          txIn.scriptSig = Buffer.alloc(0)
+        } else {
+          const prevTx = await TxFetcher.fetchTransaction(txIn.prevTx.toString('hex'))
+          const scriptPubKey = prevTx.txOuts[txIn.prevIndex].scriptPubKey
+          txIn.scriptSig = scriptPubKey
+        }
+      })
+      
+      const versionEncoded = BitcoinVarint.intToLittleEndian(clonedTx.version, 4);
+      const txInsLengthEncoded = BitcoinVarint.encodeVarint(clonedTx.txIns.length)
+      const txOutsLengthEncoded = BitcoinVarint.encodeVarint(clonedTx.txOuts.length)
+      const lockTimeEncoded = BitcoinVarint.intToLittleEndian(clonedTx.locktime, 4)
+      const txInsSerialized = clonedTx.txIns.map(tx => tx.serialize(true))
+      const txOutsSerialized = clonedTx.txOuts.map(tx => tx.serialize())
+      const SIGHASH_ALL = Buffer.from([0x01, 0x00, 0x00, 0x00]) //encoded in little endian over 4 bytes
+      const serializedTx = Buffer.concat([versionEncoded, txInsLengthEncoded, ...txInsSerialized, txOutsLengthEncoded, ...txOutsSerialized, lockTimeEncoded, SIGHASH_ALL])
 
-    // Reverse the prevTx (because it's stored in little-endian format)
-    // In Bitcoin transactions, the txid of a previous transaction input is stored in little-endian byte order in the raw hex.
-    // However, when displayed, it is usually presented in big-endian format for human readability.
-    // const previousTransactionHash
+      const firstHash = crypto.createHash('sha256').update(serializedTx).digest();
+      const secondHash = crypto.createHash('sha256').update(firstHash).digest();
+      
+      return secondHash;
+    }
 
-    return Buffer.from([])
-  }
-
-  async fee(testnet: boolean): Promise<number> {
-    const inputSum  = (await Promise.all(this.txIns.map(tx => tx.value(testnet)))).reduce((acc, value) => acc + value, 0);
+  async fee(): Promise<number> {
+    const inputSum  = (await Promise.all(this.txIns.map(tx => tx.value()))).reduce((acc, value) => acc + value, 0);
     const outputSum = (await Promise.all(this.txOuts.map(tx => tx.amount))).reduce((acc, value) => acc + value, 0);
     
     return inputSum - outputSum
@@ -75,7 +82,7 @@ export default class Tx {
     const txInsLengthEncoded = BitcoinVarint.encodeVarint(this.txIns.length)
     const txOutsLengthEncoded = BitcoinVarint.encodeVarint(this.txOuts.length)
     const lockTimeEncoded = BitcoinVarint.intToLittleEndian(this.locktime, 4)
-    const txInsSerialized = this.txIns.map(tx => tx.serialize())
+    const txInsSerialized = this.txIns.map(tx => tx.serialize(false))
     const txOutsSerialized = this.txOuts.map(tx => tx.serialize())
     const serializedTx = Buffer.concat([versionEncoded, txInsLengthEncoded, ...txInsSerialized, txOutsLengthEncoded, ...txOutsSerialized, lockTimeEncoded])
     const SIGHASH_ALL = Buffer.from([0x01, 0x00, 0x00, 0x00]) //encoded in little endian over 4 bytes
@@ -86,7 +93,7 @@ export default class Tx {
       return serializedTx
   }
 
-  static parse(buffer: BufferReader, testnet: boolean = false): Tx {
+  static parse(buffer: BufferReader): Tx {
     const versionBuffer = buffer.nextBuffer(4)
     const version = BitcoinVarint.littleEndianToInt(new Uint8Array(versionBuffer))
 
@@ -108,6 +115,6 @@ export default class Tx {
     
     const locktime = BitcoinVarint.littleEndianToInt(new Uint8Array(buffer.nextBuffer(4)))
 
-    return new Tx(version, txInputs, txOutputs, locktime, testnet);
+    return new Tx(version, txInputs, txOutputs, locktime);
   }
 }

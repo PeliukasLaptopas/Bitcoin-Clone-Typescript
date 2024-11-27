@@ -23,25 +23,19 @@ export default class TxIn {
   }
 
   // Fetch the previous transaction
-  async fetchTx(testnet: boolean = false): Promise<Tx> {
+  async fetchTx(): Promise<Tx> {
     const txId = this.prevTx.toString('hex'); // Convert the previous transaction hash to hex
-    return await TxFetcher.fetchTransaction(txId, testnet); // Fetch the transaction using the TxFetcher
+    return await TxFetcher.fetchTransaction(txId); // Fetch the transaction using the TxFetcher
   }
 
   // Get the output value from the previous transaction
-  async value(testnet: boolean = false): Promise<number> {
-    const tx = await this.fetchTx(testnet); // Fetch the previous transaction
+  async value(): Promise<number> {
+    const tx = await this.fetchTx(); // Fetch the previous transaction
     return tx.txOuts[this.prevIndex].amount; // Return the amount from the corresponding output
   }
 
-  // Get the ScriptPubKey from the previous transaction
-  async scriptPubKey(testnet: boolean = false): Promise<Buffer> {
-    const tx = await this.fetchTx(testnet); // Fetch the previous transaction
-    return tx.txOuts[this.prevIndex].scriptPubKey; // Return the ScriptPubKey from the corresponding output
-  }
-
-  serialize(): Buffer {
-    const prevTxBuffer = Buffer.from(this.prevTx);
+  serialize(reversePrevTx: boolean): Buffer {
+    const prevTxBuffer = reversePrevTx === true ? Buffer.from(this.prevTx).reverse() : Buffer.from(this.prevTx);
     const prevIndexBuffer = BitcoinVarint.intToLittleEndian(this.prevIndex, 4);
     const scriptSigLength = BitcoinVarint.encodeVarint(this.scriptSig.length)
     const sequenceBuffer = BitcoinVarint.intToLittleEndian(this.sequence, 4);
