@@ -6,17 +6,19 @@ import TxIn from './transaction/txIn';
 import { writeTransactionsIntoCache } from "./readTransactionsToCache"
 import TxFetcher from './transaction/transactionFetcher';
 import { createHash } from 'crypto';
-import { c } from 'vite/dist/node/types.d-aGj9QkWt';
 
     // import * as bitcoin from 'bitcoinjs-lib';
     // bitcoin.Transaction.fromHex
 (async () => {
     writeTransactionsIntoCache();
     
-    const data = await TxFetcher.fetchTransaction("452c629d67e41baec3ac6f04fe744b4b9617f8f859c63b3002f8684e7a4fee03");
-    const sigHash = (await data.signatureHash(0)).toString('hex')
-    // console.log('sigHash: ' + sigHash)
+    const tx = await TxFetcher.fetchTransaction("452c629d67e41baec3ac6f04fe744b4b9617f8f859c63b3002f8684e7a4fee03");
+    const sigHash = (await tx.signatureHash(0)).toString('hex')
+    console.log('sigHash: ' + sigHash)
 
+    // console.log(tx.txIns[0].serialize().toString('hex'))
+
+    //0100000001813f79011acb80925dfe69b3def355fe914bd1d96a3f5f71bf8303c6a989c7d1000000006b483045022100ed81ff192e75a3fd2304004dcadb746fa5e24c5031ccfcf21320b0277457c98f02207a986d955c6e0cb35d446a89d3f56100f4d7f67801c31967743a9c8e10615bed01210349fc4e631e3624a545de3f89f5d8684c7b8138bd94bdd531d2e213bf016b278afeffffff02a135ef01000000001976a914bc3b654dca7e56b04dca18f2566cdaf02e8d9ada88ac99c39800000000001976a9141c4bc762dd5423e332166702cb75f40df79fea1288ac19430600
     // const data = "277f6acf172a2069dc9805ef547c153a6389abc95493333136be59b50904d422"
     // const b = Buffer.from(data, 'hex').reverse()
     // console.log(b.toString('hex'))

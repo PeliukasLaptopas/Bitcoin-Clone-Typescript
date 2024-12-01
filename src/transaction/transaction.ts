@@ -40,7 +40,7 @@ export default class Tx {
       this
     );
 
-    clonedTx.txIns.map(async (txIn: TxIn, index) => {
+    const updatedScriptSigs = await Promise.all(clonedTx.txIns.map(async (txIn: TxIn, index) => {
       if (inputIndex !== index) {
         txIn.scriptSig = Buffer.alloc(0)
       } else {
@@ -48,9 +48,7 @@ export default class Tx {
         const scriptPubKey = prevTx.txOuts[txIn.prevIndex].scriptPubKey
         txIn.scriptSig = scriptPubKey
       }
-    })
-    //mine:      34b92a2c5acec6f93173370ca387aace9de76a5676f999e7245e66edbfdf00f0
-    //should be: 27e0c5994dec7824e56dec6b2fcb342eb7cdb0d0957c2fce9882f715e85d81a6
+    }))
     
     const versionEncoded = BitcoinVarint.intToLittleEndian(clonedTx.version, 4);
     const txInsLengthEncoded = BitcoinVarint.encodeVarint(clonedTx.txIns.length)
@@ -64,12 +62,6 @@ export default class Tx {
     const firstHash = crypto.createHash('sha256').update(serializedTx).digest();
     const secondHash = crypto.createHash('sha256').update(firstHash).digest();
 
-    console.log(Buffer.concat(txInsSerialized).toString('hex'))
-    console.log(this.txIns[0].serialize().toString('hex'))
-
-    // sb: 0100000001813f79011acb80925dfe69b3def355fe914bd1d96a3f5f71bf8303c6a989c7d1000000001976a914a802fc56c704ce87c42d7c92eb75e7896bdc41ae88acfeffffff02a135ef01000000001976a914bc3b654dca7e56b04dca18f2566cdaf02e8d9ada88ac99c39800000000001976a9141c4bc762dd5423e332166702cb75f40df79fea1288ac1943060001000000
-    // is: 0100000001813f79011acb80925dfe69b3def355fe914bd1d96a3f5f71bf8303c6a989c7d1000000006b483045022100ed81ff192e75a3fd2304004dcadb746fa5e24c5031ccfcf21320b0277457c98f02207a986d955c6e0cb35d446a89d3f56100f4d7f67801c31967743a9c8e10615bed01210349fc4e631e3624a545de3f89f5d8684c7b8138bd94bdd531d2e213bf016b278afeffffff02a135ef01000000001976a914bc3b654dca7e56b04dca18f2566cdaf02e8d9ada88ac99c39800000000001976a9141c4bc762dd5423e332166702cb75f40df79fea1288ac1943060001000000
-    
     return secondHash;
   }
 
@@ -122,26 +114,3 @@ export default class Tx {
     return new Tx(version, txInputs, txOutputs, locktime);
   }
 }
-
-
-/*
-010000000100000000000000000000000000000000000000000000000000000000000000000000006b4830450221009af6687ea6d
-                                                                          0000006b
-01000000010000000000000000000000000000000000000000000000000000000000000000ffffffff
-
-
-
-x Version:               01000000          (Version number: 1, little-endian)
-x Input Count:           01                (1 input in this transaction)
-x Input (Previous TXID): 0000000000000000000000000000000000000000000000000000000000000000
-  Input (Output Index):  00000000          (Output index in the previous transaction: 0)
-                         
-  Script Length:         6b                (Length of scriptSig: 107 bytes)
-  ScriptSig:             4830450221009af6687ea6dc495adfed761c1f78ac30f97879a3ecea704d62cf0e9e1ee99c990220633f9e0dedce631020b343df922cbae0258969135bf5eb8f8757e41eafb683dd01210395581e52c354cd2f484fe8ed83af7a3097005b2f9c60bff71d35bd795f54b67
-  Sequence:              ffffffff          (Sequence number: 0xFFFFFFFF)
-  Output Count:          01                (1 output in this transaction)
-  Output Value:          00e1f50500000000  (Value in satoshis: 1,000,000 satoshis or 0.01 BTC)
-  Script Length:         19                (Length of scriptPubKey: 25 bytes)
-  ScriptPubKey:          76a9141d0f172a0ecb48aee1be1f2687d2963ae33f71a188ac
-  Locktime:              00000000          (Transaction is valid immediately)
-*/
