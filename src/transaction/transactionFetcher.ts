@@ -4,9 +4,14 @@ import Tx from './transaction';
 import BufferReader from 'buffer-reader';
 
 export default class TxFetcher {
-  static cache: { [key: string]: Tx } = {};
+  // static cache: { [key: string]: Tx } = {};
+  static cache = new Map<string, Tx>();
 
   static async fetchTransaction(tx_id: string): Promise<Tx> {
-    return TxFetcher.cache[tx_id];
+    const tx = TxFetcher.cache.get(tx_id);
+    if (!tx) {
+      throw new Error(`Transaction ${tx_id} not found in cache.`);
+    }
+    return Promise.resolve(tx);
   }
 }

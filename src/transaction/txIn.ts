@@ -7,7 +7,7 @@ import Tx from './transaction';
 export default class TxIn {
   prevTx: Buffer;
   prevIndex: number;
-  scriptSig: Buffer;
+  scriptSig: Buffer; //includes varint of length inside this buffer
   sequence: number;
 
   constructor(
@@ -22,6 +22,10 @@ export default class TxIn {
     this.sequence = sequence;
   }
 
+  public getPrevTxBigEndian() {
+    return this.prevTx
+  }
+
   // Fetch the previous transaction
   async fetchTx(): Promise<Tx> {
     const txId = this.prevTx.toString('hex'); // Convert the previous transaction hash to hex
@@ -34,22 +38,22 @@ export default class TxIn {
     return tx.txOuts[this.prevIndex].amount; // Return the amount from the corresponding output
   }
 
-  serialize(reversePrevTx: boolean): Buffer {
-    const prevTxBuffer = reversePrevTx === true ? Buffer.from(this.prevTx).reverse() : Buffer.from(this.prevTx);
+  serialize(): Buffer {
+    const prevTxBuffer = Buffer.from(this.prevTx);
     const prevIndexBuffer = BitcoinVarint.intToLittleEndian(this.prevIndex, 4);
-    const scriptSigLength = BitcoinVarint.encodeVarint(this.scriptSig.length)
     const sequenceBuffer = BitcoinVarint.intToLittleEndian(this.sequence, 4);
 
-    return Buffer.concat([prevTxBuffer, prevIndexBuffer, scriptSigLength, this.scriptSig, sequenceBuffer]);
+    return Buffer.concat([prevTxBuffer, prevIndexBuffer, this.scriptSig, sequenceBuffer]);
   }
 
   static parse(buffer: BufferReader): TxIn {
     const prevTx = buffer.nextBuffer(32);
-    const prevIndex = buffer.nextUInt32LE()
+    const prevIndex = BitcoinVarint.littleEndianToInt(new Uint8Array(buffer.nextBuffer(4)))
+
     const scriptSigLength = BitcoinVarint.readVarint(buffer);
     const scriptSig = buffer.nextBuffer(scriptSigLength);
     const sequence = buffer.nextUInt32LE()
 
-    return new TxIn(prevTx, prevIndex, scriptSig, sequence)
+    return new TxIn(prevTx, prevIndex, Buffer.concat([BitcoinVarint.encodeVarint(scriptSigLength), scriptSig]), sequence)
   }
 }

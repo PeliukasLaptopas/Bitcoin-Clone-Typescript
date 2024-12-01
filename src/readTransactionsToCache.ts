@@ -1,5 +1,5 @@
 import BufferReader from "buffer-reader";
-import txCache from "../txCache.json"
+import txCache from "../transaction_cache.json"
 import Tx from "./transaction/transaction";
 import TxFetcher from "./transaction/transactionFetcher";
 
@@ -9,6 +9,6 @@ export function writeTransactionsIntoCache() {
         const hexBufferReader = new BufferReader(txHexBuffer)
         const tx = Tx.parse(hexBufferReader)
 
-        TxFetcher.cache[txId] = tx
+        TxFetcher.cache.set(txId, tx) 
     }
 }
