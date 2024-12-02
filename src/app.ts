@@ -13,8 +13,12 @@ import { createHash } from 'crypto';
     writeTransactionsIntoCache();
     
     const tx = await TxFetcher.fetchTransaction("452c629d67e41baec3ac6f04fe744b4b9617f8f859c63b3002f8684e7a4fee03");
-    const sigHash = (await tx.signatureHash(0)).toString('hex')
-    console.log('sigHash: ' + sigHash)
+    // const sigHash = await tx.signatureHash(0)
+    // console.log(sigHash.toString('hex'))
+
+    const verifiedTx = await tx.verify(0)
+    console.log(verifiedTx)
+
 
     // console.log(tx.txIns[0].serialize().toString('hex'))
 
