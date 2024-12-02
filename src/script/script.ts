@@ -1,9 +1,12 @@
 import BufferReader from "buffer-reader";
 import BitcoinVarint from "../utils/bitcoinVarint";
+import { OP_CODE_FUNCTIONS, OpFunction } from "./opCodesFunctions";
+import { OpCode } from "./opCodes";
 
 export default class Script {
   public cmds: (number | Buffer)[];
 
+  //To generate cmds use bitcoin.script.decompile(scriptPubKey | scriptSig)
   constructor(cmds: (number | Buffer)[] = []) {
       this.cmds = cmds;
   }
@@ -11,6 +14,59 @@ export default class Script {
   combine(other: Script): Script {
     return new Script([...this.cmds, ...other.cmds]);
   }
+
+  //super simple - only supports p2pkh
+  public evaluate(z: Buffer): boolean {
+    const cmds = [...this.cmds]; // Copy commands to safely modify
+    const stack: Buffer[] = []; // Stack for evaluation
+
+    while (cmds.length > 0) {
+        const cmd = cmds.shift();
+        if(cmd === undefined) { //todo fix this
+          throw new Error("Cmd was undefined but tried to evaluate")
+        }
+
+        if(typeof cmd !== "number") { // Push data (Buffer) onto the stack
+          console.log("Current DATA " + cmd.toString('hex'))
+          stack.push(cmd);
+        } else {                      // Operation
+            console.log("Current OP " + cmd.toString(16))
+
+            const operation = OP_CODE_FUNCTIONS[cmd as OpCode];
+
+            if (!operation) {
+                throw new Error(`Unknown opcode: ${cmd}`)
+            }
+            
+            // if (cmd === OpCode.OP_CHECKSIG) {
+            //     if (!(operation as (stack: Buffer[], z: Buffer) => boolean)(stack, z)) {
+            //         console.error(`Bad operation: OP_CHECKSIG (0xAC)`);
+            //         return false;
+            //     }
+            // } else {
+            //     // Execute the operation
+            //     if (!(operation as OpFunction)(stack)) {
+            //         console.error(`Bad operation: ${cmd}`);
+            //         return false;
+            //     }
+            // }
+        }
+    }
+
+    if (stack.length === 0) {
+        console.error("Stack is empty at the end of script evaluation");
+        return false;
+    }
+
+    const top = stack.pop();
+    if (!top || top.equals(Buffer.alloc(0))) {
+        console.error("Top stack item is an empty buffer");
+        return false;
+    }
+
+    return true;
+}
+
 
   public static parse(buffer: BufferReader): Script {
       const cmds: (number | Buffer)[] = [];

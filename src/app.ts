@@ -17,7 +17,7 @@ import { createHash } from 'crypto';
     // console.log(sigHash.toString('hex'))
 
     const verifiedTx = await tx.verify(0)
-    console.log(verifiedTx)
+    // console.log(verifiedTx)
 
 
     // console.log(tx.txIns[0].serialize().toString('hex'))
