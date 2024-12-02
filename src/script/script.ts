@@ -30,13 +30,12 @@ export default class Script {
           console.log("Current DATA " + cmd.toString('hex'))
           stack.push(cmd);
         } else {                      // Operation
-            console.log("Current OP " + cmd.toString(16))
+            console.log(OpCode[cmd as OpCode])
+            // const operation = OP_CODE_FUNCTIONS[cmd as OpCode];
 
-            const operation = OP_CODE_FUNCTIONS[cmd as OpCode];
-
-            if (!operation) {
-                throw new Error(`Unknown opcode: ${cmd}`)
-            }
+            // if (!operation) {
+            //     throw new Error(`Unknown opcode: ${cmd as OpCode}`)
+            // }
             
             // if (cmd === OpCode.OP_CHECKSIG) {
             //     if (!(operation as (stack: Buffer[], z: Buffer) => boolean)(stack, z)) {

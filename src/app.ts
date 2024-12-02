@@ -12,13 +12,13 @@ import { createHash } from 'crypto';
 (async () => {
     writeTransactionsIntoCache();
     
-    const tx = await TxFetcher.fetchTransaction("452c629d67e41baec3ac6f04fe744b4b9617f8f859c63b3002f8684e7a4fee03");
-    // const sigHash = await tx.signatureHash(0)
-    // console.log(sigHash.toString('hex'))
+    const tx1 = await TxFetcher.fetchTransaction("d1c789a9c60383bf715f3f6ad9d14b91fe55f3deb369fe5d9280cb1a01793f81");
+    const tx2 = await TxFetcher.fetchTransaction("452c629d67e41baec3ac6f04fe744b4b9617f8f859c63b3002f8684e7a4fee03");
+    const sigHash = await tx2.signatureHash(0)
+    const verifiedTx = await tx2.verify(0)
 
-    const verifiedTx = await tx.verify(0)
-    // console.log(verifiedTx)
-
+    // console.log(tx1.txIns)
+    // console.log(tx2.txIns)
 
     // console.log(tx.txIns[0].serialize().toString('hex'))
 
