@@ -1,9 +1,24 @@
 import * as bitcoin from 'bitcoinjs-lib';
-import { ECPairFactory } from 'ecpair';
-import * as ecc from 'tiny-secp256k1';
 import { OpCode } from './opCodes';
+import * as secp256k1 from 'secp256k1';
 
-const ECPair = ECPairFactory(ecc);
+/**
+ * Number zero which pushes an empty byte array onto the stack
+ * @param stack
+ */
+export function op0(stack: Buffer[]): boolean {
+    stack.push(encodeNum(0));
+    return true;
+}
+  
+/**
+ * Pushes a number onto the stack
+ * @param stack
+ */
+export function op1(stack: Buffer[]): boolean {
+    stack.push(encodeNum(1));
+    return true;
+}
     
 export function opDup(stack: Buffer[]): boolean {
     if (stack.length < 1) {
@@ -49,23 +64,40 @@ const opHash256 = (stack: Buffer[]): boolean => {
     return true;
 };
 
-const opEqual = (stack: Buffer[]): boolean => {
+/*
+If the two elements are equal, the result is true (represented as a single Buffer containing 0x01).
+If the two elements are not equal, the result is false (represented as an empty Buffer, Buffer.alloc(0)).
+*/
+export function opEqual(stack: Buffer[]): boolean {
     if (stack.length < 2) {
-        return false;
+      return false;
     }
-    const element1 = stack.pop();
-    const element2 = stack.pop();
-    if (!element1 || !element2) return false; // Redundant but safe
-    return element1.equals(element2);
-};
+  
+    const a = stack.pop()!;
+    const b = stack.pop()!;
+    const result = a.equals(b);
+  
+    if (!result) {
+      op0(stack);
+    } else {
+      op1(stack);
+    }
+  
+    return true;
+}
 
-const opVerify = (stack: Buffer[]): boolean => {
-    if (stack.length < 1) {
+
+export function opVerify(stack: Buffer[]): boolean {
+    if (stack.length === 0) {
         return false;
     }
-    const element = stack.pop();
-    return element! && element.length === 1 && element[0] !== 0;
-};
+
+    if (Buffer.alloc(0).equals(stack.pop()!)) {
+        return false;
+    }
+
+    return true;
+}
 
 const opEqualVerify = (stack: Buffer[]): boolean => {
     return opEqual(stack) && opVerify(stack);
@@ -75,14 +107,16 @@ const opCheckSig = (stack: Buffer[], z: Buffer): boolean => {
     if (stack.length < 2) {
         return false;
     }
-    const secPubKey = stack.pop();
-    const derSignature = stack.pop()?.slice(0, -1); // Remove the last byte (hash type)
 
-    if (!secPubKey || !derSignature) return false;
+    let pubKey = stack.pop()!;
+    let sig = stack.pop()!;
+    if (sig.byteLength !== 71 && sig.byteLength !== 72) throw new Error(`Sig must be 71/72 bytes, got ${sig.byteLength}`);
 
+    const sigDEC = sig.subarray(0, sig.byteLength - 1);  // Remove the last byte (hash type)
+    
     try {
-        const pubKey = ECPair.fromPublicKey(secPubKey);
-        const isValid = ecc.verify(z, pubKey.publicKey, derSignature);
+        const signature = secp256k1.signatureImport(sigDEC);
+        const isValid = secp256k1.ecdsaVerify(signature, z, pubKey);
         stack.push(encodeNum(isValid ? 1 : 0));
         return true;
     } catch (error) {

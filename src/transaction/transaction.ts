@@ -37,8 +37,6 @@ export default class Tx {
 
   public async verify(inputIndex: number): Promise<boolean> {
     const scriptSigRaw = this.txIns[inputIndex].scriptSig //raw because it contains length, for decompiling we will need to get rid of length
-    console.log(scriptSigRaw.toString('hex'))
-
     const scriptSigBufferReader = new BufferReader(scriptSigRaw)
     BitcoinVarint.readVarint(scriptSigBufferReader) // does a side effect of removing
     const scriptSig = scriptSigBufferReader.restAll()
@@ -60,10 +58,9 @@ export default class Tx {
 
     const prevTx = await TxFetcher.fetchTransaction(Buffer.from(this.txIns[inputIndex].prevTx.toReversed()).toString('hex')) //prevTx is stored in little-endian so we need to reverse to take real value
     const scriptPubKeyRaw = prevTx.txOuts[this.txIns[inputIndex].prevIndex].scriptPubKey //raw because it contains length, for decompiling we will need to get rid of length
-    console.log(scriptPubKeyRaw.toString('hex'))
     //before decompiling ScriptPubKey, we need to discard length for bitcoin.script to work, first bytes stores length
     const scriptPubKeyBufferReader = new BufferReader(scriptPubKeyRaw)
-    const scriptPubKeyLength = BitcoinVarint.readVarint(scriptPubKeyBufferReader)
+    const scriptPubKeyLength = BitcoinVarint.readVarint(scriptPubKeyBufferReader) // does a side effect of removing
     const scriptPubKey = scriptPubKeyBufferReader.restAll()
 
     const scriptPubKeyChunks = bitcoin.script.decompile(scriptPubKey);
@@ -72,30 +69,15 @@ export default class Tx {
         return Promise.resolve(false);
     }
 
+    const sigHash = await this.signatureHash(inputIndex)
     const combinedScript = scriptSigChunks.concat(scriptPubKeyChunks);
 
     const script = new Script(combinedScript)
+    const valid = script.evaluate(sigHash)
 
-    // console.log("----------------------------")
-    // console.log(scriptSig.toString('hex'))
-    // console.log("----------------------------")
-    // console.log(scriptPubKey.toString('hex'))
-    // console.log("----------------------------")
-    // scriptPubKeyChunks.forEach(ssc => {
-    //   if(typeof ssc === "number") {
-    //     console.log(ssc.toString(16))
-    //   } else {
-    //     console.log(ssc.toString('hex'))
-    //   }
-    // })
-    // console.log("----------------------------")
+    console.log('valid: ' + valid)
 
-    script.evaluate(Buffer.from([]))
-
-    // const sigScript = Script.fromRaw(scriptSig);
-    // const pubScript = Script.fromRaw(scriptPubKeyRaw);
-
-    return Promise.resolve(true);
+    return Promise.resolve(valid);
   }
 
   //The hash of the transaction data that is being signed by the private key (this is specifically constructed for signing).
@@ -103,7 +85,7 @@ export default class Tx {
   public async signatureHash(inputIndex: number): Promise<Buffer> {
     const clonedTx: Tx = _.cloneDeep(this)
 
-    const updatedScriptSigs = await Promise.all(clonedTx.txIns.map(async (txIn: TxIn, index) => {
+    await Promise.all(clonedTx.txIns.map(async (txIn: TxIn, index) => {
       if (inputIndex !== index) {
         txIn.scriptSig = Buffer.alloc(0)
       } else {

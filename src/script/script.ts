@@ -3,6 +3,7 @@ import BitcoinVarint from "../utils/bitcoinVarint";
 import { OP_CODE_FUNCTIONS, OpFunction } from "./opCodesFunctions";
 import { OpCode } from "./opCodes";
 
+
 export default class Script {
   public cmds: (number | Buffer)[];
 
@@ -17,6 +18,21 @@ export default class Script {
 
   //super simple - only supports p2pkh
   public evaluate(z: Buffer): boolean {
+// pubKey    - 0349fc4e631e3624a545de3f89f5d8684c7b8138bd94bdd531d2e213bf016b278a
+// signature - 3045022100ed81ff192e75a3fd2304004dcadb746fa5e24c5031ccfcf21320b0277457c98f02207a986d955c6e0cb35d446a89d3f56100f4d7f67801c31967743a9c8e10615bed01
+
+    // const pubKeyHex = "0349fc4e631e3624a545de3f89f5d8684c7b8138bd94bdd531d2e213bf016b278a"
+    // const signatureHex = "3045022100ed81ff192e75a3fd2304004dcadb746fa5e24c5031ccfcf21320b0277457c98f02207a986d955c6e0cb35d446a89d3f56100f4d7f67801c31967743a9c8e10615bed01"
+    
+    // const pubKey = Buffer.from(pubKeyHex, 'hex').reverse()
+    // const pubKeysignature = Buffer.from(signatureHex, 'hex')
+
+    // console.log(pubKey.toString('hex'))
+    // console.log(pubKeysignature.toString('hex'))
+
+    // const pubKeyEC = ECPair.fromPublicKey(pubKey);
+    // const isValid = ecc.verify(z, pubKeyEC.publicKey, pubKeysignature);
+
     const cmds = [...this.cmds]; // Copy commands to safely modify
     const stack: Buffer[] = []; // Stack for evaluation
 
@@ -27,28 +43,29 @@ export default class Script {
         }
 
         if(typeof cmd !== "number") { // Push data (Buffer) onto the stack
-          console.log("Current DATA " + cmd.toString('hex'))
+          // console.log("Current DATA " + cmd.toString('hex'))
           stack.push(cmd);
         } else {                      // Operation
-            console.log(OpCode[cmd as OpCode])
-            // const operation = OP_CODE_FUNCTIONS[cmd as OpCode];
+            const opCodeStr = OpCode[cmd as OpCode]
+            // console.log(OpCode[cmd as OpCode])
+            const operation = OP_CODE_FUNCTIONS[cmd as OpCode];
 
-            // if (!operation) {
-            //     throw new Error(`Unknown opcode: ${cmd as OpCode}`)
-            // }
+            if (!operation) {
+                throw new Error(`Unknown opcode: ${cmd as OpCode}`)
+            }
             
-            // if (cmd === OpCode.OP_CHECKSIG) {
-            //     if (!(operation as (stack: Buffer[], z: Buffer) => boolean)(stack, z)) {
-            //         console.error(`Bad operation: OP_CHECKSIG (0xAC)`);
-            //         return false;
-            //     }
-            // } else {
-            //     // Execute the operation
-            //     if (!(operation as OpFunction)(stack)) {
-            //         console.error(`Bad operation: ${cmd}`);
-            //         return false;
-            //     }
-            // }
+            if (cmd === OpCode.OP_CHECKSIG) {
+                if (!(operation as (stack: Buffer[], z: Buffer) => boolean)(stack, z)) {
+                    console.error(`Bad operation: OP_CHECKSIG (0xAC)`);
+                    return false;
+                }
+            } else {
+                // Execute the operation
+                if (!(operation as OpFunction)(stack)) {
+                    console.error(`Bad operation: ${cmd}`);
+                    return false;
+                }
+            }
         }
     }
 
