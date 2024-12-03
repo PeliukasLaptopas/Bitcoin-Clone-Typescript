@@ -1,7 +1,7 @@
 import BufferReader from 'buffer-reader';
-import Script from '../script/script';
+import ScriptP2PKH from '../script/scriptP2PKH';
 import BitcoinVarint from '../utils/bitcoinVarint';
-import TxFetcher from './transactionFetcher';
+import TxFetcher from '../transactionCache/transactionFetcher';
 import Tx from './transaction';
 
 export default class TxIn {

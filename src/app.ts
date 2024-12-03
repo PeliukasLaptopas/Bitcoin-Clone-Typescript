@@ -1,19 +1,20 @@
-import Script from './script/script';
+import ScriptP2PKH from './script/scriptP2PKH';
 import Tx from './transaction/transaction';
 import BufferReader from 'buffer-reader';
 import TxOut from './transaction/txOut';
 import TxIn from './transaction/txIn';
-import { writeTransactionsIntoCache } from "./readTransactionsToCache"
-import TxFetcher from './transaction/transactionFetcher';
+import TxFetcher, { writeTransactionsIntoCache } from './transactionCache/transactionFetcher';
 import { createHash } from 'crypto';
 
-    // import * as bitcoin from 'bitcoinjs-lib';
-    // bitcoin.Transaction.fromHex
 (async () => {
     writeTransactionsIntoCache();
     
-    const tx2 = await TxFetcher.fetchTransaction("452c629d67e41baec3ac6f04fe744b4b9617f8f859c63b3002f8684e7a4fee03");
-    const verifiedTx = await tx2.verify(0)
+    const txToVerify = await TxFetcher.fetchTransaction("452c629d67e41baec3ac6f04fe744b4b9617f8f859c63b3002f8684e7a4fee03");
+    const verifiedTx1 = await txToVerify.verify(0)
+
+    // const txToTest = await TxFetcher.fetchTransaction("5418099cc755cb9dd3ebc6cf1a7888ad53a1a3beb5a025bce89eb1bf7f1650a2");
+    // const verifiedTx2 = await txToTest.verify(0)
+
 
     // console.log('--------------------------------------')
     // console.log(sigHash1.toString('hex'))
@@ -28,6 +29,10 @@ import { createHash } from 'crypto';
 
 })();
 
+
+// function writeTransactionsIntoCache() {
+//     throw new Error('Function not implemented.');
+// }
 /*
 {
     "277f6acf172a2069dc9805ef547c153a6389abc95493333136be59b50904d422": "01000000010000000000000000000000000000000000000000000000000000000000000000ffffffff00ffffffff0200e1f505000000001976a91489abcdefabbaabbaabbaabbaabbaabbaabbaabba88ac00c2eb0b000000001976a91489abcdefabbaabbaabbaabbaabbaabbaabbaabba88ac00000000",

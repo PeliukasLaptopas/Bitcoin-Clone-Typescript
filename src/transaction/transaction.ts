@@ -2,15 +2,11 @@ import BitcoinVarint from "../utils/bitcoinVarint";
 import TxIn from "./txIn";
 import BufferReader from 'buffer-reader';
 import TxOut from "./txOut";
-import TxFetcher from "./transactionFetcher";
-import { Signer, SignerAsync, ECPairInterface, ECPairFactory, ECPairAPI, TinySecp256k1Interface } from 'ecpair';
+import TxFetcher from "../transactionCache/transactionFetcher";
 import * as crypto from 'crypto';
 import * as bitcoin from 'bitcoinjs-lib';
-import * as ecc from 'tiny-secp256k1';
-import Script from "../script/script";
+import ScriptP2PKH from "../script/scriptP2PKH";
 import _ from 'lodash';
-
-const ECPair = ECPairFactory(ecc);
 
 export default class Tx {
   version: number;
@@ -40,6 +36,7 @@ export default class Tx {
     const scriptSigBufferReader = new BufferReader(scriptSigRaw)
     BitcoinVarint.readVarint(scriptSigBufferReader) // does a side effect of removing
     const scriptSig = scriptSigBufferReader.restAll()
+
     //we now have hex of our ScriptSig and ScriptPubKey. We need to transform them into a structured format like this below.
     //bitcoin.script.decompile does just that, turns it into this:
     //[
@@ -72,11 +69,10 @@ export default class Tx {
     const sigHash = await this.signatureHash(inputIndex)
     const combinedScript = scriptSigChunks.concat(scriptPubKeyChunks);
 
-    const script = new Script(combinedScript)
-    const valid = script.evaluate(sigHash)
+    const script = new ScriptP2PKH(combinedScript)
+    const valid = script.evaluateP2PKH(sigHash)
 
     console.log('valid: ' + valid)
-
     return Promise.resolve(valid);
   }
 
@@ -159,35 +155,3 @@ export default class Tx {
     return new Tx(version, txInputs, txOutputs, locktime);
   }
 }
-    // const txIn = this.txIns[inputIndex];
-    // const sigHash = this.signatureHash(inputIndex);
-
-    // const scriptSig = txIn.scriptSig;
-    // const scriptPubKey = this.txOuts[inputIndex].scriptPubKey;
-    
-    // //push data on stack
-    // const chunks = bitcoin.script.decompile(scriptSig);
-    // if (!chunks || chunks.length < 2) {
-    //     console.error('Invalid scriptSig format');
-    //     return false;
-    // }
-
-    // const signature = chunks[1] as Buffer; // Extracted signature
-    // const publicKey = chunks[2] as Buffer; // Extracted public key
-
-    // const decodedSignature = bitcoin.script.signature.decode(signature)
-
-    // console.log(decodedSignature.signature.toString('hex'))
-    
-    // const keyPair = ECPair.fromPublicKey(publicKey);
-    // const isValid = keyPair.verify(sigHash, bitcoin.script.signature.decode(signature).signature);
-
-
-    // // Evaluate the script using the sigHash
-    // try {
-    //   const result = bitcoin.script.compile(combinedScript, sigHash);
-    //   return result;
-    // } catch (error) {
-    //   console.error('Script verification failed:', error);
-    //   return false;
-    // }

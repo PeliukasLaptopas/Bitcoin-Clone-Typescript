@@ -4,7 +4,7 @@ import { OP_CODE_FUNCTIONS, OpFunction } from "./opCodesFunctions";
 import { OpCode } from "./opCodes";
 
 
-export default class Script {
+export default class ScriptP2PKH {
   public cmds: (number | Buffer)[];
 
   //To generate cmds use bitcoin.script.decompile(scriptPubKey | scriptSig)
@@ -12,27 +12,12 @@ export default class Script {
       this.cmds = cmds;
   }
 
-  combine(other: Script): Script {
-    return new Script([...this.cmds, ...other.cmds]);
+  combine(other: ScriptP2PKH): ScriptP2PKH {
+    return new ScriptP2PKH([...this.cmds, ...other.cmds]);
   }
 
   //super simple - only supports p2pkh
-  public evaluate(z: Buffer): boolean {
-// pubKey    - 0349fc4e631e3624a545de3f89f5d8684c7b8138bd94bdd531d2e213bf016b278a
-// signature - 3045022100ed81ff192e75a3fd2304004dcadb746fa5e24c5031ccfcf21320b0277457c98f02207a986d955c6e0cb35d446a89d3f56100f4d7f67801c31967743a9c8e10615bed01
-
-    // const pubKeyHex = "0349fc4e631e3624a545de3f89f5d8684c7b8138bd94bdd531d2e213bf016b278a"
-    // const signatureHex = "3045022100ed81ff192e75a3fd2304004dcadb746fa5e24c5031ccfcf21320b0277457c98f02207a986d955c6e0cb35d446a89d3f56100f4d7f67801c31967743a9c8e10615bed01"
-    
-    // const pubKey = Buffer.from(pubKeyHex, 'hex').reverse()
-    // const pubKeysignature = Buffer.from(signatureHex, 'hex')
-
-    // console.log(pubKey.toString('hex'))
-    // console.log(pubKeysignature.toString('hex'))
-
-    // const pubKeyEC = ECPair.fromPublicKey(pubKey);
-    // const isValid = ecc.verify(z, pubKeyEC.publicKey, pubKeysignature);
-
+  public evaluateP2PKH(z: Buffer): boolean {
     const cmds = [...this.cmds]; // Copy commands to safely modify
     const stack: Buffer[] = []; // Stack for evaluation
 
@@ -84,7 +69,7 @@ export default class Script {
 }
 
 
-  public static parse(buffer: BufferReader): Script {
+  public static parse(buffer: BufferReader): ScriptP2PKH {
       const cmds: (number | Buffer)[] = [];
       const length = BitcoinVarint.readVarint(buffer);
       let count = 0;
@@ -126,7 +111,7 @@ export default class Script {
           throw new SyntaxError("Script parsing error: mismatched length");
       }
 
-      return new Script(cmds);
+      return new ScriptP2PKH(cmds);
   }
 
   public rawSerialize(): Buffer {
