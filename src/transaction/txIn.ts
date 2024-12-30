@@ -28,7 +28,7 @@ export default class TxIn {
 
   // Fetch the previous transaction
   async fetchTx(): Promise<Tx> {
-    const txId = this.prevTx.toString('hex'); // Convert the previous transaction hash to hex
+    const txId = Buffer.from(this.prevTx.toReversed()).toString('hex'); // Convert the previous transaction hash to hex
     return await TxFetcher.fetchTransaction(txId); // Fetch the transaction using the TxFetcher
   }
 

@@ -31,7 +31,8 @@ export default class Tx {
     return txid;
   }
 
-  public async verify(inputIndex: number): Promise<boolean> {
+  //verifies a specific input
+  private async verifyInput(inputIndex: number): Promise<boolean> {
     const scriptSigRaw = this.txIns[inputIndex].scriptSig //raw because it contains length, for decompiling we will need to get rid of length
     const scriptSigBufferReader = new BufferReader(scriptSigRaw)
     BitcoinVarint.readVarint(scriptSigBufferReader) // does a side effect of removing
@@ -50,7 +51,7 @@ export default class Tx {
     const scriptSigChunks = bitcoin.script.decompile(scriptSig);
     if (!scriptSigChunks || scriptSigChunks.length < 2) {
         console.error('Invalid scriptSig format');
-        return Promise.resolve(false);
+        return false;
     }
 
     const prevTx = await TxFetcher.fetchTransaction(Buffer.from(this.txIns[inputIndex].prevTx.toReversed()).toString('hex')) //prevTx is stored in little-endian so we need to reverse to take real value
@@ -63,7 +64,7 @@ export default class Tx {
     const scriptPubKeyChunks = bitcoin.script.decompile(scriptPubKey);
     if (!scriptPubKeyChunks || scriptPubKeyChunks.length < 2) {
         console.error('Invalid scriptPubKey format');
-        return Promise.resolve(false);
+        return false;
     }
 
     const sigHash = await this.signatureHash(inputIndex)
@@ -72,8 +73,25 @@ export default class Tx {
     const script = new ScriptP2PKH(combinedScript)
     const valid = script.evaluateP2PKH(sigHash)
 
-    console.log('valid: ' + valid)
-    return Promise.resolve(valid);
+    return valid;
+  }
+
+  public async verify(): Promise<Boolean> {
+    const fee = await this.fee()
+
+    if(fee < 0) {
+      return false
+    }
+
+    this.txIns.forEach(async (_, idx ) => {
+        const verified = await this.verifyInput(idx)
+        if(!verified) {
+          return false
+        }
+      }
+    )
+
+    return true
   }
 
   //The hash of the transaction data that is being signed by the private key (this is specifically constructed for signing).
@@ -107,8 +125,8 @@ export default class Tx {
   }
 
   async fee(): Promise<number> {
-    const inputSum  = (await Promise.all(this.txIns.map(tx => tx.value()))).reduce((acc, value) => acc + value, 0);
-    const outputSum = (await Promise.all(this.txOuts.map(tx => tx.amount))).reduce((acc, value) => acc + value, 0);
+    const inputSum  = (await Promise.all(this.txIns.map(txIn => txIn.value()))).reduce((acc, value) => acc + value, 0);
+    const outputSum = (await Promise.all(this.txOuts.map(txOut => txOut.amount))).reduce((acc, value) => acc + value, 0);
     
     return inputSum - outputSum
   }

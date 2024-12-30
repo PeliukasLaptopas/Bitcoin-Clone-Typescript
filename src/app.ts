@@ -10,7 +10,11 @@ import { createHash } from 'crypto';
     writeTransactionsIntoCache();
     
     const txToVerify = await TxFetcher.fetchTransaction("452c629d67e41baec3ac6f04fe744b4b9617f8f859c63b3002f8684e7a4fee03");
-    const verifiedTx1 = await txToVerify.verify(0)
+    console.log(await txToVerify.fee())
+
+    // console.log(await txToVerify.verify())
+
+    // console.log()
 
     // const txToTest = await TxFetcher.fetchTransaction("5418099cc755cb9dd3ebc6cf1a7888ad53a1a3beb5a025bce89eb1bf7f1650a2");
     // const verifiedTx2 = await txToTest.verify(0)
