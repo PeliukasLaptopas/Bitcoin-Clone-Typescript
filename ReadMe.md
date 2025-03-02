@@ -1,1 +1,2 @@
-[📖 Math & Cryptography Fundamentals](docs/Math_Cryptography_Fundamentals.md)
+Concepts:
+[Math & Cryptography Fundamentals](docs/Math_Cryptography_Fundamentals.md)
