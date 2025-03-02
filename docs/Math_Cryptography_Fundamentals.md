@@ -23,7 +23,7 @@ Elliptic curve cryptography (ECC) provides a secure and efficient way to generat
 |-----------------------------|------------------------------------------------------------------|
 | **What is G?**              | G is the generator point of the Secp256k1 curve, a predefined fixed point used as the starting value for key generation in Bitcoin. |
 | **How is G Chosen?**        | G is explicitly defined in the SEC2 standard and is a known point (x, y) that lies on the Secp256k1 curve. It is chosen for its large prime order and cryptographic properties. |
-| **Public Key Generation**   | A Bitcoin public key is derived by multiplying the private key (a random scalar **d**) with G: **P = d × G**. This operation is easy to compute but infeasible to reverse. |
+| **Public Key Generation**   | A public key in elliptic curve cryptography (used in Bitcoin) is derived by multiplying the private key (a random scalar d) with G. |
 | **Why Not a Random G?**     | Using a fixed G ensures that all Bitcoin implementations use the same base point, making verification and key derivation consistent across different wallets and nodes. |
 | **Controversy Around a Fixed G**  | Some cryptographers argue that a fixed generator point could introduce hidden vulnerabilities if it were secretly chosen with malicious intent. However, Secp256k1's G was defined transparently in the SEC2 standard, avoiding the concerns raised about other curves that rely on unexplained parameters. |
 
